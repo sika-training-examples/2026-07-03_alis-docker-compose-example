@@ -1,0 +1,17 @@
+services:
+  caddy:
+    build: ./caddy
+    image: ttl.sh/ondrejsika/alis-example/caddy
+    depends_on:
+      frontend:
+        condition: service_healthy
+        restart: true
+      backend:
+        condition: service_healthy
+        restart: true
+    ports:
+      - "80:80"
+      - "3000:3000"
+      - "8000:8000"
+    networks:
+      - frontend

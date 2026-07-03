@@ -1,0 +1,77 @@
+name: alis-example
+
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_PASSWORD: pg
+      POSTGRES_DB: counter
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 5s
+      timeout: 1s
+      retries: 5
+    networks:
+      - backend
+
+  backend:
+    build: ./backend
+    image: ttl.sh/ondrejsika/alis-example/backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      BACKEND: postgres
+      POSTGRES_HOST: postgres
+      POSTGRES_PASSWORD: pg
+      POSTGRES_DATABASE: counter
+      API_ONLY: "1"
+      HTTP_CLOSE_CONNECTION: "1"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:8000/api/readyz"]
+      interval: 5s
+      timeout: 1s
+      retries: 5
+    deploy:
+      replicas: 2
+    networks:
+      - backend
+      - frontend
+
+  frontend:
+    build: ./frontend
+    image: ttl.sh/ondrejsika/alis-example/frontend
+    environment:
+      API_ORIGIN: http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+        restart: true
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:3000/api/livez"]
+      interval: 5s
+      timeout: 1s
+      retries: 5
+    deploy:
+      replicas: 2
+    networks:
+      - frontend
+
+  tests:
+    build: ./tests
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    networks:
+      - frontend
+
+networks:
+  backend:
+  frontend:
+
+volumes:
+  postgres_data:

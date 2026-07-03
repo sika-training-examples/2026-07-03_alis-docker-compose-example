@@ -1,0 +1,23 @@
+services:
+  backend:
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.alis-example-backend.loadbalancer.server.port=8000
+      - traefik.http.routers.alis-example-backend.rule=Host(`${HOST:-backend-127-0-0-1.nip.io}`)
+    networks:
+      - backend
+      - frontend
+      - traefik
+  frontend:
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.alis-example-frontend.loadbalancer.server.port=3000
+      - traefik.http.routers.alis-example-frontend.rule=Host(`${HOST:-frontend-127-0-0-1.nip.io}`)
+    networks:
+      - frontend
+      - traefik
+
+networks:
+  traefik:
+    name: traefik
+    external: true
